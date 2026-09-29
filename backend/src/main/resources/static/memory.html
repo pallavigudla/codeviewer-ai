@@ -129,6 +129,15 @@
         document.getElementById('memory-language-filter').addEventListener('change', filterMemories);
     });
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     async function fetchMemories() {
         try {
             const res = await apiCall('/api/memory');
@@ -136,6 +145,13 @@
             filterMemories();
         } catch (err) {
             console.error('Failed to load memories:', err);
+            const container = document.getElementById('memory-items-container');
+            if (container) {
+                container.innerHTML = `<div class="card" style="text-align: center; padding: 2rem; color: var(--danger-color, #ef4444);">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+                    Failed to load memories: ${escapeHtml(err.message || 'Server error')}
+                </div>`;
+            }
         }
     }
 
