@@ -1,0 +1,24 @@
+# Target & Build outputs
+target/
+backend/target/
+*.class
+*.jar
+*.war
+
+# Environment & Secrets
+.env
+*.env
+backend/.env
+*.key
+*.pem
+
+# IDE & OS Files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+logs/

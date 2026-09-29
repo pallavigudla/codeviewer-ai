@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings — Code Review Agent</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="app-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fa-solid fa-code"></i></div>
+            <span class="sidebar-title">CodeReview.AI</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item"><a href="/index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
+            <li class="sidebar-item"><a href="/dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+            <li class="sidebar-item"><a href="/review.html"><i class="fa-solid fa-file-code"></i> <span>Review Code</span></a></li>
+            <li class="sidebar-item"><a href="/history.html"><i class="fa-solid fa-clock-rotate-left"></i> <span>Review History</span></a></li>
+            <li class="sidebar-item"><a href="/memory.html"><i class="fa-solid fa-brain"></i> <span>Hindsight Memory</span></a></li>
+            <li class="sidebar-item active"><a href="/settings.html"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="navbar-title">User Settings</div>
+            <div class="navbar-actions">
+                <button class="btn-icon" id="theme-toggle-btn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+                <div class="notification-wrapper">
+                    <button class="btn-icon" id="notification-bell-btn" title="Notifications">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">Notifications</div>
+                        <ul class="notification-list" id="notification-list"></ul>
+                    </div>
+                </div>
+                <span style="font-size: 0.9rem; font-weight: 500;" id="user-display-name">Developer</span>
+            </div>
+        </nav>
+
+        <main class="container">
+            <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Appearance Card -->
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-palette"></i> Appearance & Theme</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>Interface Theme Mode</strong>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Toggle between Dark Mode and Light Mode interface</div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="toggleTheme()"><i class="fa-solid fa-circle-half-stroke"></i> Switch Theme</button>
+                    </div>
+                </div>
+
+                <!-- User Profile Card -->
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-user-gear"></i> Developer Profile</h3>
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="settings-fullname" class="form-input" placeholder="Developer Name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="settings-email" class="form-input" placeholder="developer@example.com" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Account Role</label>
+                            <input type="text" id="settings-role" class="form-input" placeholder="DEVELOPER" disabled>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Profile Changes</button>
+                    </form>
+                </div>
+
+                <!-- Logout Card -->
+                <div class="card" style="border: 1px solid var(--danger);">
+                    <h3 style="margin-bottom: 0.5rem; color: var(--danger);"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Clear session authentication token</p>
+                    <button class="btn btn-secondary" style="color: var(--danger); border-color: var(--danger);" onclick="logout()"><i class="fa-solid fa-power-off"></i> Logout Account</button>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (currentUser) {
+            document.getElementById('settings-fullname').value = currentUser.fullName || currentUser.username || '';
+            document.getElementById('settings-email').value = currentUser.email || '';
+            document.getElementById('settings-role').value = currentUser.role || 'DEVELOPER';
+        }
+    });
+
+    document.getElementById('profile-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newName = document.getElementById('settings-fullname').value;
+        if (currentUser) {
+            currentUser.fullName = newName;
+            localStorage.setItem('cra_user', JSON.stringify(currentUser));
+            showToast('Profile name updated successfully.', 'success');
+            renderNavigation();
+        }
+    });
+</script>
+</body>
+</html>

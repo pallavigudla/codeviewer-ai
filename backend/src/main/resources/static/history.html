@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review History — Code Review Agent</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="app-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fa-solid fa-code"></i></div>
+            <span class="sidebar-title">CodeReview.AI</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item"><a href="/index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
+            <li class="sidebar-item"><a href="/dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+            <li class="sidebar-item"><a href="/review.html"><i class="fa-solid fa-file-code"></i> <span>Review Code</span></a></li>
+            <li class="sidebar-item active"><a href="/history.html"><i class="fa-solid fa-clock-rotate-left"></i> <span>Review History</span></a></li>
+            <li class="sidebar-item"><a href="/memory.html"><i class="fa-solid fa-brain"></i> <span>Hindsight Memory</span></a></li>
+            <li class="sidebar-item"><a href="/settings.html"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="navbar-title">Review History</div>
+            <div class="navbar-actions">
+                <button class="btn-icon" id="theme-toggle-btn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+                <div class="notification-wrapper">
+                    <button class="btn-icon" id="notification-bell-btn" title="Notifications">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">Notifications</div>
+                        <ul class="notification-list" id="notification-list"></ul>
+                    </div>
+                </div>
+                <span style="font-size: 0.9rem; font-weight: 500;" id="user-display-name">Developer</span>
+            </div>
+        </nav>
+
+        <main class="container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700;">Code Review History</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Inspect previous AI code analyses, scores, and recommendations</p>
+                </div>
+                <a href="/review.html" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Code Review</a>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="card" style="margin-bottom: 1.5rem; padding: 1rem;">
+                <div style="display: flex; gap: 1rem;">
+                    <input type="text" id="history-search-input" class="form-input" placeholder="Search by summary or submission title..." style="flex: 1;">
+                    <select id="history-verdict-filter" class="form-select" style="width: 180px;">
+                        <option value="">All Verdicts</option>
+                        <option value="APPROVED">Approved</option>
+                        <option value="CHANGES_REQUESTED">Changes Requested</option>
+                        <option value="COMMENTED">Commented</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- History Table Card -->
+            <div class="card">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Submission / Title</th>
+                                <th>Verdict</th>
+                                <th>Quality Score</th>
+                                <th>Issues Found</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading review history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+    let allReviews = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadHistory();
+
+        document.getElementById('history-search-input').addEventListener('input', filterHistory);
+        document.getElementById('history-verdict-filter').addEventListener('change', filterHistory);
+    });
+
+    async function loadHistory() {
+        try {
+            const res = await apiCall('/api/reviews');
+            allReviews = res.data || [];
+            filterHistory();
+        } catch (err) {
+            console.error('Failed to load review history:', err);
+            document.getElementById('history-tbody').innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger); padding: 2rem;">Failed to load history. Please try again.</td></tr>';
+        }
+    }
+
+    function filterHistory() {
+        const query = (document.getElementById('history-search-input').value || '').toLowerCase();
+        const verdict = document.getElementById('history-verdict-filter').value;
+
+        const filtered = allReviews.filter(r => {
+            const summaryText = (r.summary || '').toLowerCase();
+            const titleText = (r.submissionTitle || '').toLowerCase();
+            const matchesQuery = !query || summaryText.includes(query) || titleText.includes(query);
+            const matchesVerdict = !verdict || r.verdict === verdict;
+            return matchesQuery && matchesVerdict;
+        });
+
+        renderHistory(filtered);
+    }
+
+    function renderHistory(reviews) {
+        const tbody = document.getElementById('history-tbody');
+        if (!reviews || reviews.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No review history matches your criteria.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = reviews.map(r => {
+            const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleString() : 'N/A';
+            const score = r.reviewMetric ? (r.reviewMetric.codeQualityScore || 8.5).toFixed(1) : '8.5';
+            const totalIssues = r.reviewMetric ? r.reviewMetric.totalIssuesFound : 0;
+            
+            let badgeClass = 'badge-info';
+            if (r.verdict === 'APPROVED') badgeClass = 'badge-success';
+            else if (r.verdict === 'CHANGES_REQUESTED') badgeClass = 'badge-danger';
+            else if (r.verdict === 'COMMENTED') badgeClass = 'badge-warning';
+
+            return `
+                <tr>
+                    <td>
+                        <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(r.submissionTitle || 'Code Submission')}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.3;">${escapeHtml(r.summary ? (r.summary.substring(0, 60) + '...') : '')}</div>
+                    </td>
+                    <td><span class="badge ${badgeClass}">${r.verdict || 'COMMENTED'}</span></td>
+                    <td><strong style="color: var(--accent-primary);">${score}</strong> / 10</td>
+                    <td><span style="font-weight: 500;">${totalIssues}</span> issues</td>
+                    <td style="font-size: 0.85rem; color: var(--text-secondary);">${dateStr}</td>
+                    <td>
+                        <a href="/review.html?id=${r.id}" class="btn btn-secondary" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+</script>
+</body>
+</html>

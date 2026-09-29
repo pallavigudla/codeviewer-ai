@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hindsight Memory — Code Review Agent</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="app-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fa-solid fa-code"></i></div>
+            <span class="sidebar-title">CodeReview.AI</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item"><a href="/index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
+            <li class="sidebar-item"><a href="/dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+            <li class="sidebar-item"><a href="/review.html"><i class="fa-solid fa-file-code"></i> <span>Review Code</span></a></li>
+            <li class="sidebar-item active"><a href="/memory.html"><i class="fa-solid fa-brain"></i> <span>Hindsight Memory</span></a></li>
+            <li class="sidebar-item"><a href="/settings.html"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="navbar-title">Hindsight Memory Engine</div>
+            <div class="navbar-actions">
+                <button class="btn-icon" id="theme-toggle-btn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+                <div class="notification-wrapper">
+                    <button class="btn-icon" id="notification-bell-btn" title="Notifications">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">Notifications</div>
+                        <ul class="notification-list" id="notification-list"></ul>
+                    </div>
+                </div>
+                <span style="font-size: 0.9rem; font-weight: 500;" id="user-display-name">Developer</span>
+            </div>
+        </nav>
+
+        <main class="container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700;">Hindsight Memory Store</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Historical anti-patterns, suggestions, and developer rules (Stored outside PostgreSQL)</p>
+                </div>
+                <button class="btn btn-primary" onclick="document.getElementById('add-memory-modal').classList.add('active')">
+                    <i class="fa-solid fa-plus"></i> Save New Memory
+                </button>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="card" style="margin-bottom: 1.5rem; padding: 1rem;">
+                <div style="display: flex; gap: 1rem;">
+                    <input type="text" id="memory-search-input" class="form-input" placeholder="Search mistakes, suggestions, or standards..." style="flex: 1;">
+                    <select id="memory-language-filter" class="form-select" style="width: 180px;">
+                        <option value="">All Languages</option>
+                        <option value="Java">Java</option>
+                        <option value="JavaScript">JavaScript</option>
+                        <option value="Python">Python</option>
+                        <option value="HTML">HTML</option>
+                        <option value="CSS">CSS</option>
+                        <option value="C++">C++</option>
+                        <option value="SQL">SQL</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Memory List Container -->
+            <div id="memory-items-container" style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                <div class="card" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    Loading Hindsight memories...
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal: Add New Memory Rule -->
+<div class="modal-overlay" id="add-memory-modal">
+    <div class="modal-content" style="max-width: 550px;">
+        <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-brain" style="color: var(--accent-primary);"></i> Save Hindsight Memory</h3>
+        <form id="add-memory-form">
+            <div class="form-group">
+                <label class="form-label">Programming Language</label>
+                <select id="new-mem-language" class="form-select" required>
+                    <option value="Java">Java</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Python">Python</option>
+                    <option value="HTML">HTML</option>
+                    <option value="CSS">CSS</option>
+                    <option value="C++">C++</option>
+                    <option value="SQL">SQL</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Past Mistake / Anti-pattern</label>
+                <input type="text" id="new-mem-mistake" class="form-input" placeholder="e.g. Unclosed ResultSet in database helper" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">AI Suggestion / Fix</label>
+                <input type="text" id="new-mem-suggestion" class="form-input" placeholder="e.g. Always wrap JDBC operations in try-with-resources" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Improvement Rule / Standard</label>
+                <input type="text" id="new-mem-standard" class="form-input" placeholder="e.g. Enforce HikariCP connection pool timeout configuration">
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('add-memory-modal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Memory</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+    let allMemories = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await fetchMemories();
+
+        document.getElementById('memory-search-input').addEventListener('input', filterMemories);
+        document.getElementById('memory-language-filter').addEventListener('change', filterMemories);
+    });
+
+    async function fetchMemories() {
+        try {
+            const res = await apiCall('/api/memory');
+            allMemories = res.data || [];
+            filterMemories();
+        } catch (err) {
+            console.error('Failed to load memories:', err);
+        }
+    }
+
+    function filterMemories() {
+        const query = (document.getElementById('memory-search-input').value || '').toLowerCase();
+        const lang = document.getElementById('memory-language-filter').value;
+
+        const filtered = allMemories.filter(m => {
+            const matchesQuery = (m.mistake || '').toLowerCase().includes(query) ||
+                                 (m.suggestion || '').toLowerCase().includes(query) ||
+                                 (m.teamStandard || '').toLowerCase().includes(query) ||
+                                 (m.developerName || '').toLowerCase().includes(query);
+            const matchesLang = !lang || (m.language && m.language.toLowerCase() === lang.toLowerCase());
+            return matchesQuery && matchesLang;
+        });
+
+        renderMemories(filtered);
+    }
+
+    function renderMemories(memories) {
+        const container = document.getElementById('memory-items-container');
+        if (!memories || memories.length === 0) {
+            container.innerHTML = '<div class="card" style="text-align: center; padding: 2rem; color: var(--text-secondary);">No memory records match your filter criteria.</div>';
+            return;
+        }
+
+        container.innerHTML = memories.map(m => {
+            const isImprovement = (m.mistake || '').toLowerCase().includes('improvement');
+            const isMistake = (m.mistake || '').toLowerCase().includes('mistake') || (m.mistake || '').toLowerCase().includes('repeated');
+            const isStandard = (m.mistake || '').toLowerCase().includes('standard');
+            
+            let cardBorder = 'var(--accent-primary)';
+            if (isImprovement) cardBorder = 'var(--success)';
+            else if (isMistake) cardBorder = 'var(--danger)';
+            else if (isStandard) cardBorder = '#A855F7';
+
+            return `
+                <div class="card" style="border-left: 4px solid ${cardBorder}; padding: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                        <span class="badge badge-info">${m.language || 'General'}</span>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);">${new Date(m.timestamp || Date.now()).toLocaleDateString()}</span>
+                    </div>
+                    <div style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: ${cardBorder};"></i> ${m.mistake || 'Anti-pattern recorded'}
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem; line-height: 1.4;">
+                        <strong>Suggestion:</strong> ${m.suggestion || 'Follow best practices'}
+                    </div>
+                    ${m.teamStandard ? `
+                        <div style="font-size: 0.85rem; color: var(--accent-primary); background: rgba(99,102,241,0.1); padding: 0.5rem; border-radius: 4px;">
+                            <i class="fa-solid fa-shield-halved"></i> <strong>Rule Standard:</strong> ${m.teamStandard}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    document.getElementById('add-memory-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const language = document.getElementById('new-mem-language').value;
+        const mistake = document.getElementById('new-mem-mistake').value;
+        const suggestion = document.getElementById('new-mem-suggestion').value;
+        const teamStandard = document.getElementById('new-mem-standard').value;
+        const userId = currentUser ? currentUser.id.toString() : 'guest';
+        const developerName = currentUser ? (currentUser.fullName || currentUser.username) : 'Developer';
+
+        try {
+            const payload = { userId, developerName, language, mistake, suggestion, teamStandard };
+            await apiCall('/api/memory', 'POST', payload);
+            document.getElementById('add-memory-modal').classList.remove('active');
+            document.getElementById('add-memory-form').reset();
+            showToast('Hindsight Memory saved successfully!', 'success');
+            await fetchMemories();
+        } catch (err) {
+            showToast(err.message || 'Failed to save memory', 'error');
+        }
+    });
+</script>
+</body>
+</html>

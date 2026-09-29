@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineering Dashboard — Code Review Agent</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="app-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fa-solid fa-code"></i></div>
+            <span class="sidebar-title">CodeReview.AI</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item"><a href="/index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
+            <li class="sidebar-item active"><a href="/dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+            <li class="sidebar-item"><a href="/review.html"><i class="fa-solid fa-file-code"></i> <span>Review Code</span></a></li>
+            <li class="sidebar-item"><a href="/memory.html"><i class="fa-solid fa-brain"></i> <span>Hindsight Memory</span></a></li>
+            <li class="sidebar-item"><a href="/settings.html"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="navbar-title">Individual Dashboard</div>
+            <div class="navbar-actions">
+                <button class="btn-icon" id="theme-toggle-btn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+                <div class="notification-wrapper">
+                    <button class="btn-icon" id="notification-bell-btn" title="Notifications">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">Notifications</div>
+                        <ul class="notification-list" id="notification-list"></ul>
+                    </div>
+                </div>
+                <span style="font-size: 0.9rem; font-weight: 500;" id="user-display-name">Developer</span>
+            </div>
+        </nav>
+
+        <main class="container">
+            <!-- 5 Dashboard Metric Cards -->
+            <div class="grid-5">
+                <div class="card">
+                    <div class="card-title">Total Reviews</div>
+                    <div class="card-value" id="metric-total-reviews">0</div>
+                    <div class="card-subtitle"><i class="fa-solid fa-arrow-up"></i> Lifetime analyses</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Improvement Score</div>
+                    <div class="card-value" id="metric-improvement">85.0%</div>
+                    <div class="card-subtitle" style="color: var(--success);"><i class="fa-solid fa-chart-line"></i> +12.4% trend</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Memory Learned</div>
+                    <div class="card-value" id="metric-memory">0</div>
+                    <div class="card-subtitle"><i class="fa-solid fa-brain"></i> Active Hindsight rules</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Languages Reviewed</div>
+                    <div class="card-value" id="metric-languages-count">0</div>
+                    <div class="card-subtitle" id="metric-languages-list">Java, Python, JS</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Active Projects</div>
+                    <div class="card-value" id="metric-active-projects">1</div>
+                    <div class="card-subtitle"><i class="fa-solid fa-folder"></i> Managed repositories</div>
+                </div>
+            </div>
+
+            <!-- Recent Reviews & Analytics -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem;"><i class="fa-solid fa-clock-rotate-left"></i> Recent Code Reviews</h3>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Submission</th>
+                                    <th>Verdict</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-reviews-tbody">
+                                <tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Loading recent reviews...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem;"><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <a href="/review.html" class="btn btn-primary" style="justify-content: center;"><i class="fa-solid fa-plus"></i> New Code Review</a>
+                        <a href="/memory.html" class="btn btn-secondary" style="justify-content: center;"><i class="fa-solid fa-brain"></i> Search Memories</a>
+                        <a href="/settings.html" class="btn btn-secondary" style="justify-content: center;"><i class="fa-solid fa-gear"></i> Settings</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const userId = currentUser ? currentUser.id : null;
+            const url = userId ? `/api/dashboard?userId=${userId}` : '/api/dashboard';
+            const res = await apiCall(url);
+            const data = res.data;
+
+            if (data) {
+                document.getElementById('metric-total-reviews').textContent = data.totalReviews || 0;
+                document.getElementById('metric-improvement').textContent = (data.improvementScore || 85.0).toFixed(1) + '%';
+                document.getElementById('metric-memory').textContent = data.memoryLearned || 0;
+                document.getElementById('metric-active-projects').textContent = data.activeProjects || 1;
+
+                if (data.languagesReviewed && data.languagesReviewed.length > 0) {
+                    document.getElementById('metric-languages-count').textContent = data.languagesReviewed.length;
+                    document.getElementById('metric-languages-list').textContent = data.languagesReviewed.join(', ');
+                }
+
+                const tbody = document.getElementById('recent-reviews-tbody');
+                if (!data.recentReviews || data.recentReviews.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No reviews found yet. Create your first code review!</td></tr>';
+                } else {
+                    tbody.innerHTML = data.recentReviews.map(r => `
+                        <tr>
+                            <td><strong>${r.summary ? r.summary.substring(0, 35) + '...' : 'Code Review'}</strong></td>
+                            <td><span class="badge ${r.verdict === 'APPROVED' ? 'badge-success' : 'badge-warning'}">${r.verdict || 'COMMENTED'}</span></td>
+                            <td><strong>${r.reviewMetric ? (r.reviewMetric.codeQualityScore || 8.5).toFixed(1) : '8.5'} / 10</strong></td>
+                            <td>${new Date(r.createdAt).toLocaleDateString()}</td>
+                            <td><a href="/review.html?id=${r.id}" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">View</a></td>
+                        </tr>
+                    `).join('');
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load dashboard data:', err);
+        }
+    });
+</script>
+</body>
+</html>

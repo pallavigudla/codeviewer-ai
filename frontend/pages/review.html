@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Code Review — Code Review Agent</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="app-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fa-solid fa-code"></i></div>
+            <span class="sidebar-title">CodeReview.AI</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item"><a href="/index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
+            <li class="sidebar-item"><a href="/dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+            <li class="sidebar-item active"><a href="/review.html"><i class="fa-solid fa-file-code"></i> <span>Review Code</span></a></li>
+            <li class="sidebar-item"><a href="/memory.html"><i class="fa-solid fa-brain"></i> <span>Hindsight Memory</span></a></li>
+            <li class="sidebar-item"><a href="/settings.html"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="navbar-title">AI Code Review Workspace</div>
+            <div class="navbar-actions">
+                <button class="btn-icon" id="theme-toggle-btn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+                <div class="notification-wrapper">
+                    <button class="btn-icon" id="notification-bell-btn" title="Notifications">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">Notifications</div>
+                        <ul class="notification-list" id="notification-list"></ul>
+                    </div>
+                </div>
+                <span style="font-size: 0.9rem; font-weight: 500;" id="user-display-name">Developer</span>
+            </div>
+        </nav>
+
+        <main class="container">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <!-- Review Request Form -->
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-code"></i> Submit Code for Review</h3>
+
+                    <!-- Tabs: Pasted Code vs File Upload -->
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        <button class="btn btn-secondary active" id="tab-paste-btn" onclick="switchReviewTab('paste')">Pasted Code</button>
+                        <button class="btn btn-secondary" id="tab-upload-btn" onclick="switchReviewTab('upload')">File Upload</button>
+                    </div>
+
+                    <!-- Pasted Code Form -->
+                    <form id="paste-review-form">
+                        <div class="form-group">
+                            <label class="form-label">Programming Language</label>
+                            <select id="review-language" class="form-select">
+                                <option value="">Auto-Detect</option>
+                                <option value="Java">Java</option>
+                                <option value="JavaScript">JavaScript</option>
+                                <option value="HTML">HTML</option>
+                                <option value="CSS">CSS</option>
+                                <option value="Python">Python</option>
+                                <option value="C++">C++</option>
+                                <option value="SQL">SQL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Submission Title</label>
+                            <input type="text" id="review-title" class="form-input" placeholder="e.g. User Authentication Refactor">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Code Snippet</label>
+                            <textarea id="review-code" class="form-textarea code-editor" placeholder="Paste your Java, JavaScript, Python, C++, SQL, HTML, or CSS code here..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-review" style="width: 100%; justify-content: center;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Code Review
+                        </button>
+                    </form>
+
+                    <!-- File Upload Form -->
+                    <form id="upload-review-form" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Select Source File</label>
+                            <input type="file" id="file-input" class="form-input" accept=".java,.js,.html,.css,.py,.cpp,.sql" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Submission Title (Optional)</label>
+                            <input type="text" id="file-review-title" class="form-input" placeholder="Leave empty to use file name">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-file-review" style="width: 100%; justify-content: center;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload & Review File
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Review Output / Feedback -->
+                <div class="card" id="review-result-card">
+                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-square-poll-vertical"></i> Review Feedback & Metrics</h3>
+                    <div id="review-placeholder" style="text-align: center; color: var(--text-secondary); padding: 3rem 1rem;">
+                        <i class="fa-solid fa-brain" style="font-size: 3rem; margin-bottom: 1rem; color: var(--accent-primary);"></i>
+                        <p>Submit code on the left to generate sub-second AI review feedback and automatic Hindsight Memory rule extraction.</p>
+                    </div>
+
+                    <div id="review-output" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <span class="badge" id="output-verdict-badge">APPROVED</span>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);" id="output-timestamp"></span>
+                        </div>
+
+                        <!-- Score Progress Bars -->
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; background: var(--bg-tertiary); padding: 1rem; border-radius: 8px;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                                    <span>Code Quality</span><strong id="score-quality">9.0/10</strong>
+                                </div>
+                                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                    <div id="bar-quality" style="width: 90%; height: 100%; background: var(--accent-primary); border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                                    <span>Security Score</span><strong id="score-security">9.5/10</strong>
+                                </div>
+                                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                    <div id="bar-security" style="width: 95%; height: 100%; background: var(--success); border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                                    <span>Performance Score</span><strong id="score-performance">8.5/10</strong>
+                                </div>
+                                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                    <div id="bar-performance" style="width: 85%; height: 100%; background: var(--warning); border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Markdown Output -->
+                        <div id="output-markdown-content" style="line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+    function switchReviewTab(tab) {
+        document.getElementById('tab-paste-btn').classList.toggle('active', tab === 'paste');
+        document.getElementById('tab-upload-btn').classList.toggle('active', tab === 'upload');
+        document.getElementById('paste-review-form').style.display = tab === 'paste' ? 'block' : 'none';
+        document.getElementById('upload-review-form').style.display = tab === 'upload' ? 'block' : 'none';
+    }
+
+    document.getElementById('paste-review-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = document.getElementById('review-code').value;
+        const title = document.getElementById('review-title').value || 'Code Review Submission';
+        const language = document.getElementById('review-language').value || 'Java';
+        const authorId = currentUser ? currentUser.id : null;
+
+        const btn = document.getElementById('btn-submit-review');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Code...';
+
+        try {
+            const payload = { title, language, codeContent: code, codeSnippet: code, authorId };
+            const res = await apiCall('/api/reviews/analyze', 'POST', payload);
+            renderReviewResult(res.data);
+            showToast('AI Code Review completed successfully!', 'success');
+        } catch (err) {
+            showToast(err.message || 'Review failed', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Code Review';
+        }
+    });
+
+    document.getElementById('upload-review-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('file-input');
+        if (!fileInput.files || fileInput.files.length === 0) return;
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        if (currentUser) formData.append('authorId', currentUser.id);
+
+        const btn = document.getElementById('btn-submit-file-review');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading & Reviewing...';
+
+        try {
+            const res = await apiCall('/api/reviews/upload', 'POST', formData, true);
+            renderReviewResult(res.data);
+            showToast('File reviewed successfully!', 'success');
+        } catch (err) {
+            showToast(err.message || 'File upload review failed', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload & Review File';
+        }
+    });
+
+function renderReviewResult(data) {
+    if (!data) return;
+
+    document.getElementById('review-placeholder').style.display = 'none';
+    document.getElementById('review-output').style.display = 'block';
+
+    // Verdict
+    const verdictBadge = document.getElementById('output-verdict-badge');
+
+    const verdict = data.verdict || 'APPROVED';
+
+    verdictBadge.textContent = verdict.replace('_', ' ');
+    verdictBadge.className =
+        `badge ${verdict === 'APPROVED' ? 'badge-success' : 'badge-warning'}`;
+
+    // Timestamp
+    document.getElementById('output-timestamp').textContent =
+        new Date(data.createdAt || Date.now()).toLocaleString();
+
+    // IMPORTANT:
+    // Backend returns "metrics", NOT "reviewMetric"
+    const metrics = data.metrics || {};
+
+    const qScore = Number(metrics.codeQualityScore ?? data.overallScore ?? 0);
+    const sScore = Number(metrics.securityScore ?? 0);
+    const pScore = Number(metrics.performanceScore ?? 0);
+
+    // Code Quality
+    document.getElementById('score-quality').textContent =
+        `${qScore.toFixed(1)}/10`;
+
+    document.getElementById('bar-quality').style.width =
+        `${Math.max(0, Math.min(100, qScore * 10))}%`;
+
+    // Security
+    document.getElementById('score-security').textContent =
+        `${sScore.toFixed(1)}/10`;
+
+    document.getElementById('bar-security').style.width =
+        `${Math.max(0, Math.min(100, sScore * 10))}%`;
+
+    // Performance
+    document.getElementById('score-performance').textContent =
+        `${pScore.toFixed(1)}/10`;
+
+    document.getElementById('bar-performance').style.width =
+        `${Math.max(0, Math.min(100, pScore * 10))}%`;
+
+    // Build detailed feedback from AI categories
+    const sections = [];
+
+    function addSection(title, items) {
+        if (Array.isArray(items) && items.length > 0) {
+            sections.push(
+                `### ${title}\n` +
+                items.map(item => `• ${item}`).join('\n')
+            );
+        }
+    }
+
+    addSection('Bugs', data.bugs);
+    addSection('Security', data.security);
+    addSection('Performance', data.performance);
+    addSection('Readability', data.readability);
+    addSection('Naming', data.naming);
+    addSection('Best Practices', data.bestPractices);
+    addSection('Complexity', data.complexity);
+
+    const summary = data.summary || '';
+
+    let feedback = '';
+
+    if (summary) {
+        feedback += `Summary\n${summary}\n\n`;
+    }
+
+    if (sections.length > 0) {
+        feedback += sections.join('\n\n');
+    }
+
+    if (!feedback.trim()) {
+        feedback = 'Review completed. No additional feedback was returned.';
+    }
+
+    document.getElementById('output-markdown-content').textContent = feedback;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Code Review — Code Review Agent</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="app-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fa-solid fa-code"></i></div>
+            <span class="sidebar-title">CodeReview.AI</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item"><a href="/index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
+            <li class="sidebar-item"><a href="/dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+            <li class="sidebar-item active"><a href="/review.html"><i class="fa-solid fa-file-code"></i> <span>Review Code</span></a></li>
+            <li class="sidebar-item"><a href="/history.html"><i class="fa-solid fa-clock-rotate-left"></i> <span>Review History</span></a></li>
+            <li class="sidebar-item"><a href="/memory.html"><i class="fa-solid fa-brain"></i> <span>Hindsight Memory</span></a></li>
+            <li class="sidebar-item"><a href="/settings.html"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="navbar-title">AI Code Review Workspace</div>
+            <div class="navbar-actions">
+                <button class="btn-icon" id="theme-toggle-btn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+                <div class="notification-wrapper">
+                    <button class="btn-icon" id="notification-bell-btn" title="Notifications">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">Notifications</div>
+                        <ul class="notification-list" id="notification-list"></ul>
+                    </div>
+                </div>
+                <span style="font-size: 0.9rem; font-weight: 500;" id="user-display-name">Developer</span>
+            </div>
+        </nav>
+
+        <main class="container">
+            <div class="review-workspace-grid">
+                <!-- Review Request Form -->
+                <div class="card review-panel">
+                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-code"></i> Submit Code for Review</h3>
+
+                    <!-- Tabs: Pasted Code vs File Upload -->
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        <button class="btn btn-secondary active" id="tab-paste-btn" onclick="switchReviewTab('paste')">Pasted Code</button>
+                        <button class="btn btn-secondary" id="tab-upload-btn" onclick="switchReviewTab('upload')">File Upload</button>
+                    </div>
+
+                    <!-- Pasted Code Form -->
+                    <form id="paste-review-form">
+                        <div class="form-group">
+                            <label class="form-label">Programming Language</label>
+                            <select id="review-language" class="form-select">
+                                <option value="">Auto-Detect</option>
+                                <option value="Java">Java</option>
+                                <option value="JavaScript">JavaScript</option>
+                                <option value="HTML">HTML</option>
+                                <option value="CSS">CSS</option>
+                                <option value="Python">Python</option>
+                                <option value="C++">C++</option>
+                                <option value="SQL">SQL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Submission Title</label>
+                            <input type="text" id="review-title" class="form-input" placeholder="e.g. User Authentication Refactor">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Code Snippet</label>
+                            <textarea id="review-code" class="form-textarea code-editor" placeholder="Paste your Java, JavaScript, Python, C++, SQL, HTML, or CSS code here..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-review" style="width: 100%; justify-content: center;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Code Review
+                        </button>
+                    </form>
+
+                    <!-- File Upload Form -->
+                    <form id="upload-review-form" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Select Source File</label>
+                            <input type="file" id="file-input" class="form-input" accept=".java,.js,.html,.css,.py,.cpp,.sql" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Submission Title (Optional)</label>
+                            <input type="text" id="file-review-title" class="form-input" placeholder="Leave empty to use file name">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-file-review" style="width: 100%; justify-content: center;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload & Review File
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Review Output / Feedback -->
+                <div class="card review-panel" id="review-result-card">
+                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-square-poll-vertical"></i> Review Feedback & Metrics</h3>
+                    <div id="review-placeholder" style="text-align: center; color: var(--text-secondary); padding: 2rem 1rem;">
+                        <i class="fa-solid fa-brain" style="font-size: 2.5rem; margin-bottom: 0.75rem; color: var(--accent-primary);"></i>
+                        <p>Submit code on the left to generate sub-second AI review feedback and automatic Hindsight Memory rule extraction.</p>
+                    </div>
+
+                    <div id="review-output" style="display: none; height: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+                            <span class="badge" id="output-verdict-badge">APPROVED</span>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);" id="output-timestamp"></span>
+                        </div>
+
+                        <!-- Score Progress Bars -->
+                        <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; background: var(--bg-tertiary); padding: 0.75rem 1rem; border-radius: 8px;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.2rem;">
+                                    <span>Code Quality</span><strong id="score-quality">9.0/10</strong>
+                                </div>
+                                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                    <div id="bar-quality" style="width: 90%; height: 100%; background: var(--accent-primary); border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.2rem;">
+                                    <span>Security Score</span><strong id="score-security">9.5/10</strong>
+                                </div>
+                                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                    <div id="bar-security" style="width: 95%; height: 100%; background: var(--success); border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.2rem;">
+                                    <span>Performance Score</span><strong id="score-performance">8.5/10</strong>
+                                </div>
+                                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                    <div id="bar-performance" style="width: 85%; height: 100%; background: var(--warning); border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Output -->
+                        <div id="output-markdown-content" style="line-height: 1.5; font-size: 0.9rem; height: auto;"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+    function switchReviewTab(tab) {
+        document.getElementById('tab-paste-btn').classList.toggle('active', tab === 'paste');
+        document.getElementById('tab-upload-btn').classList.toggle('active', tab === 'upload');
+        document.getElementById('paste-review-form').style.display = tab === 'paste' ? 'block' : 'none';
+        document.getElementById('upload-review-form').style.display = tab === 'upload' ? 'block' : 'none';
+    }
+
+    document.getElementById('paste-review-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = document.getElementById('review-code').value;
+        const title = document.getElementById('review-title').value || 'Code Review Submission';
+        const selectedLang = document.getElementById('review-language').value;
+        const language = (selectedLang && selectedLang.trim() !== '') ? selectedLang.trim() : '';
+
+        const btn = document.getElementById('btn-submit-review');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Code...';
+
+        try {
+            const payload = { title, language, codeContent: code, codeSnippet: code };
+            const res = await apiCall('/api/reviews/analyze', 'POST', payload);
+            renderReviewResult(res.data);
+            showToast('AI Code Review completed successfully!', 'success');
+        } catch (err) {
+            showToast(err.message || 'Review failed', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Code Review';
+        }
+    });
+
+    document.getElementById('upload-review-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('file-input');
+        if (!fileInput.files || fileInput.files.length === 0) return;
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const btn = document.getElementById('btn-submit-file-review');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading & Reviewing...';
+
+        try {
+            const res = await apiCall('/api/reviews/upload', 'POST', formData, true);
+            renderReviewResult(res.data);
+            showToast('File reviewed successfully!', 'success');
+        } catch (err) {
+            showToast(err.message || 'File upload review failed', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload & Review File';
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reviewId = urlParams.get('id');
+        if (reviewId) {
+            try {
+                const res = await apiCall('/api/reviews/' + reviewId);
+                if (res && res.data) {
+                    renderReviewResult(res.data);
+                }
+            } catch (err) {
+                console.error('Failed to load review by ID:', err);
+            }
+        }
+    });
+
+    function renderReviewResult(data) {
+        if (!data) return;
+        document.getElementById('review-placeholder').style.display = 'none';
+        document.getElementById('review-output').style.display = 'block';
+
+        const verdictBadge = document.getElementById('output-verdict-badge');
+        const verdict = data.verdict || 'APPROVED';
+        verdictBadge.textContent = verdict;
+        if (verdict === 'APPROVED') {
+            verdictBadge.className = 'badge badge-success';
+        } else if (verdict === 'CHANGES_REQUESTED') {
+            verdictBadge.className = 'badge badge-danger';
+        } else {
+            verdictBadge.className = 'badge badge-warning';
+        }
+
+        document.getElementById('output-timestamp').textContent = new Date(data.createdAt || Date.now()).toLocaleString();
+
+        const metrics = data.metrics || data.reviewMetric || {};
+        const qScore = (metrics.codeQualityScore !== undefined && metrics.codeQualityScore !== null) ? Number(metrics.codeQualityScore).toFixed(1) : (data.overallScore ? Number(data.overallScore).toFixed(1) : '10.0');
+        const sScore = (metrics.securityScore !== undefined && metrics.securityScore !== null) ? Number(metrics.securityScore).toFixed(1) : '10.0';
+        const pScore = (metrics.performanceScore !== undefined && metrics.performanceScore !== null) ? Number(metrics.performanceScore).toFixed(1) : '10.0';
+
+        document.getElementById('score-quality').textContent = `${qScore}/10`;
+        document.getElementById('bar-quality').style.width = `${Math.min(100, Math.max(0, qScore * 10))}%`;
+
+        document.getElementById('score-security').textContent = `${sScore}/10`;
+        document.getElementById('bar-security').style.width = `${Math.min(100, Math.max(0, sScore * 10))}%`;
+
+        document.getElementById('score-performance').textContent = `${pScore}/10`;
+        document.getElementById('bar-performance').style.width = `${Math.min(100, Math.max(0, pScore * 10))}%`;
+
+        renderDetailedFeedback(data);
+    }
+
+    function renderDetailedFeedback(data) {
+        const container = document.getElementById('output-markdown-content');
+        if (!container) return;
+
+        let html = '';
+
+        // 1. Code Analysis / Summary Box
+        if (data.summary) {
+            html += `
+                <div style="background: rgba(79, 70, 229, 0.1); border-left: 4px solid var(--accent-primary); padding: 0.75rem 0.9rem; border-radius: 6px; margin-bottom: 1rem;">
+                    <div style="font-weight: 700; font-size: 0.92rem; color: var(--accent-primary); margin-bottom: 0.25rem;">
+                        <i class="fa-solid fa-code"></i> Code Analysis
+                    </div>
+                    <div style="color: var(--text-primary); font-size: 0.88rem; line-height: 1.45;">${escapeHtml(data.summary)}</div>
+                </div>
+            `;
+        }
+
+        const bugs = data.bugs || [];
+        const security = data.security || [];
+        const performance = data.performance || [];
+        const readability = data.readability || [];
+        const naming = data.naming || [];
+        const bestPractices = data.bestPractices || [];
+        const complexity = data.complexity || [];
+        const improvements = data.improvements || [];
+
+        const hasCategoryLists = (bugs.length > 0 || security.length > 0 || performance.length > 0 ||
+                                  readability.length > 0 || naming.length > 0 || bestPractices.length > 0 ||
+                                  complexity.length > 0 || improvements.length > 0);
+
+        // Fallback for stored feedbackComments if detailed arrays are absent
+        if (!hasCategoryLists && data.feedbackComments) {
+            container.innerHTML = html + `<div style="line-height: 1.5; font-size: 0.88rem; white-space: pre-wrap;">${escapeHtml(data.feedbackComments)}</div>`;
+            return;
+        }
+
+        // 2. Actual Errors & Bugs
+        html += renderCategoryGroup('Actual Errors & Bugs', '<i class="fa-solid fa-bug" style="color: var(--danger);"></i>', bugs, '✅ No bugs or errors found.');
+
+        // 3. Security Findings
+        html += renderCategoryGroup('Security Findings', '<i class="fa-solid fa-shield-halved" style="color: #F59E0B;"></i>', security, '✅ No security issues found.');
+
+        // 4. Performance Findings
+        html += renderCategoryGroup('Performance Findings', '<i class="fa-solid fa-bolt" style="color: #3B82F6;"></i>', performance, null);
+
+        // 5. Optional Improvements & Style
+        const allImprovements = [...improvements, ...readability, ...naming, ...bestPractices, ...complexity];
+        html += renderCategoryGroup('Suggested Improvements & Style', '<i class="fa-solid fa-lightbulb" style="color: #10B981;"></i>', allImprovements, null);
+
+        container.innerHTML = html;
+    }
+
+    function renderCategoryGroup(title, icon, items, successMsg) {
+        let sectionHtml = '';
+        if (items && items.length > 0) {
+            sectionHtml += `
+                <div style="margin-bottom: 1rem;">
+                    <h4 style="font-size: 0.92rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                        ${icon} <span>${title}</span> (${items.length})
+                    </h4>
+                    <div style="display: flex; flex-direction: column;">
+            `;
+            items.forEach(item => {
+                sectionHtml += renderIssueCard(item);
+            });
+            sectionHtml += `</div></div>`;
+        } else if (successMsg) {
+            sectionHtml += `
+                <div style="margin-bottom: 0.85rem; font-size: 0.85rem; color: var(--success); display: flex; align-items: center; gap: 0.4rem; background: rgba(16, 185, 129, 0.08); padding: 0.6rem 0.85rem; border-radius: 6px;">
+                    <i class="fa-solid fa-circle-check"></i> ${successMsg}
+                </div>
+            `;
+        }
+        return sectionHtml;
+    }
+
+    function renderIssueCard(item) {
+        if (!item) return '';
+        if (typeof item === 'string') {
+            return `<div style="background: var(--bg-tertiary); padding: 0.6rem 0.85rem; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.88rem; line-height: 1.45; margin-bottom: 0.5rem;">${formatIssueText(item)}</div>`;
+        }
+
+        const severity = (item.severity || 'LOW').toUpperCase();
+        const lineStr = (item.line && item.line > 0) ? ` — Line ${item.line}` : '';
+
+        let iconStr = '❌';
+        let borderAccent = 'var(--danger)';
+        if (severity === 'MEDIUM' || severity === 'WARNING') {
+            iconStr = '⚠️';
+            borderAccent = 'var(--warning)';
+        } else if (severity === 'LOW' || severity === 'INFO') {
+            iconStr = 'ℹ️';
+            borderAccent = '#3B82F6';
+        }
+
+        let cardHtml = `
+            <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-left: 4px solid ${borderAccent}; border-radius: 8px; padding: 0.75rem 0.9rem; margin-bottom: 0.65rem;">
+                <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 0.88rem; margin-bottom: 0.4rem; color: var(--text-primary);">
+                    <span>${iconStr} ${severity}${lineStr}</span>
+                </div>
+        `;
+
+        if (item.problem) {
+            cardHtml += `
+                <div style="margin-bottom: 0.35rem; font-size: 0.88rem; line-height: 1.4;">
+                    <strong style="color: var(--text-primary);">Problem:</strong>
+                    <span style="color: var(--text-secondary);">${escapeHtml(item.problem)}</span>
+                </div>
+            `;
+        }
+
+        if (item.code) {
+            cardHtml += `
+                <div style="margin-bottom: 0.35rem; font-size: 0.85rem;">
+                    <strong style="color: var(--text-primary);">Code:</strong>
+                    <pre style="background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); color: #F87171; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.2rem; font-family: monospace; overflow-x: auto; margin-bottom: 0;"><code>${escapeHtml(item.code)}</code></pre>
+                </div>
+            `;
+        }
+
+        if (item.why) {
+            cardHtml += `
+                <div style="margin-bottom: 0.35rem; font-size: 0.88rem; line-height: 1.4;">
+                    <strong style="color: var(--text-primary);">Why:</strong>
+                    <span style="color: var(--text-secondary);">${escapeHtml(item.why)}</span>
+                </div>
+            `;
+        }
+
+        if (item.fix) {
+            cardHtml += `
+                <div style="margin-bottom: 0.35rem; font-size: 0.88rem; line-height: 1.4;">
+                    <strong style="color: var(--text-primary);">Fix:</strong>
+                    <span style="color: var(--text-secondary);">${escapeHtml(item.fix)}</span>
+                </div>
+            `;
+        }
+
+        if (item.correctedCode) {
+            cardHtml += `
+                <div style="margin-bottom: 0.2rem; font-size: 0.85rem;">
+                    <strong style="color: var(--success);"><i class="fa-solid fa-code"></i> Corrected Code:</strong>
+                    <pre style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34D399; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.2rem; font-family: monospace; overflow-x: auto; margin-bottom: 0; white-space: pre-wrap;"><code>${escapeHtml(item.correctedCode)}</code></pre>
+                </div>
+            `;
+        }
+
+        cardHtml += `</div>`;
+        return cardHtml;
+    }
+
+    function formatIssueText(text) {
+        if (!text) return '';
+        let formatted = escapeHtml(text);
+        formatted = formatted.replace(/(Problem:)/g, '<strong style="color: var(--danger);">$1</strong>')
+                             .replace(/(Why:)/g, '<br><strong style="color: var(--warning);">$1</strong>')
+                             .replace(/(Fix:)/g, '<br><strong style="color: var(--success);">$1</strong>')
+                             .replace(/(Example:)/g, '<br><strong style="color: var(--accent-primary);">$1</strong>');
+        return formatted;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+</script>
+</body>
+</html>
