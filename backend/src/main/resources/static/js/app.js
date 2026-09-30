@@ -30,6 +30,13 @@ function getCookie(name) {
     return null;
 }
 
+// Helper to check if current page is protected
+function isProtectedPage() {
+    const path = window.location.pathname.toLowerCase();
+    const protectedPages = ['/dashboard.html', '/review.html', '/memory.html', '/settings.html', '/history.html'];
+    return protectedPages.some(page => path.endsWith(page));
+}
+
 // API Helper with Session Credentials & CSRF Protection Support
 async function apiCall(endpoint, method = 'GET', body = null, isMultipart = false) {
     const headers = {};
@@ -59,7 +66,7 @@ async function apiCall(endpoint, method = 'GET', body = null, isMultipart = fals
             console.warn('Authentication expired or unauthorized access to:', endpoint);
             localStorage.removeItem('cra_user');
             currentUser = null;
-            if (!window.location.pathname.endsWith('/login.html') && !window.location.pathname.endsWith('/register.html') && window.location.pathname !== '/') {
+            if (isProtectedPage()) {
                 window.location.href = '/login.html';
             }
             throw new Error('Authentication required. Please log in.');
@@ -94,11 +101,7 @@ function getRoleBadgeHtml(user) {
 
 // Page Protection Check
 async function checkPageProtection() {
-    const path = window.location.pathname.toLowerCase();
-    const protectedPages = ['/dashboard.html', '/review.html', '/memory.html', '/settings.html', '/history.html'];
-    const isProtected = protectedPages.some(page => path.endsWith(page));
-
-    if (isProtected) {
+    if (isProtectedPage()) {
         try {
             const res = await apiCall('/api/auth/me');
             if (res && res.data) {
@@ -107,7 +110,7 @@ async function checkPageProtection() {
                 return true;
             }
         } catch (err) {
-            console.warn('Unauthorized access attempt to protected page:', path);
+            console.warn('Unauthorized access attempt to protected page:', window.location.pathname);
             window.location.href = '/login.html';
             return false;
         }

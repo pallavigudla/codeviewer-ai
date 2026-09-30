@@ -567,3 +567,53 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
+
+/* Auth Pages Layout & Mobile Responsiveness */
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1.5rem 1rem;
+    background-color: var(--bg-primary);
+    box-sizing: border-box;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 2rem;
+    margin: auto;
+    box-shadow: var(--shadow);
+}
+
+@media (max-width: 480px) {
+    .auth-page {
+        padding: 1rem 0.75rem;
+        align-items: center;
+    }
+
+    .auth-card {
+        padding: 1.25rem 1rem;
+        max-width: 100%;
+    }
+
+    .auth-card h2 {
+        font-size: 1.3rem !important;
+    }
+
+    .modal-overlay {
+        padding: 0.75rem;
+    }
+
+    .modal-content {
+        padding: 1.25rem 1rem;
+        max-height: 90vh;
+        overflow-y: auto;
+        max-width: 100% !important;
+    }
+
+    .form-input, .form-select, .form-textarea {
+        font-size: 16px;
+    }
+}
