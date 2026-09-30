@@ -294,6 +294,12 @@ function updateMobileDrawerContent(drawer) {
             <li class="mobile-drawer-item ${path.endsWith('/index.html') || path === '/' ? 'active' : ''}">
                 <a href="/index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a>
             </li>
+            <li class="mobile-drawer-item">
+                <a href="/index.html#features"><i class="fa-solid fa-star"></i> <span>Features</span></a>
+            </li>
+            <li class="mobile-drawer-item">
+                <a href="/index.html#about"><i class="fa-solid fa-circle-info"></i> <span>About</span></a>
+            </li>
             <li class="mobile-drawer-item ${path.endsWith('/dashboard.html') ? 'active' : ''}">
                 <a href="/dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a>
             </li>

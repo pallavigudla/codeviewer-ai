@@ -614,7 +614,13 @@ body {
 }
 
 @media (max-width: 768px) {
-    .sidebar {
+    .sidebar,
+    .desktop-nav-links,
+    .desktop-auth-btn,
+    .desktop-logo,
+    .desktop-title,
+    .navbar-title,
+    #user-display-name {
         display: none !important;
     }
 
@@ -634,16 +640,8 @@ body {
         display: flex !important;
     }
 
-    .navbar-title {
-        display: none !important;
-    }
-
     .navbar {
         padding: 0 0.85rem;
-    }
-
-    #user-display-name {
-        display: none !important;
     }
 
     .navbar-actions {
