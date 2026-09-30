@@ -190,6 +190,174 @@ function renderNavigation() {
     if (userDisplayNameElem) {
         userDisplayNameElem.textContent = isAuthenticated ? (currentUser.fullName || currentUser.username) : '';
     }
+
+    // Initialize Mobile Navigation (Hamburger & Mobile Drawer)
+    initMobileNavigation();
+}
+
+// Mobile Navigation Drawer & Hamburger Menu Controller
+function initMobileNavigation() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+
+    let hamburgerBtn = document.getElementById('mobile-menu-toggle-btn');
+    if (!hamburgerBtn) {
+        let leftNav = navbar.querySelector('.navbar-left-container');
+        if (!leftNav) {
+            leftNav = document.createElement('div');
+            leftNav.className = 'navbar-left-container';
+            leftNav.style.display = 'flex';
+            leftNav.style.alignItems = 'center';
+            leftNav.style.gap = '0.75rem';
+
+            navbar.insertBefore(leftNav, navbar.firstChild);
+        }
+
+        hamburgerBtn = document.createElement('button');
+        hamburgerBtn.id = 'mobile-menu-toggle-btn';
+        hamburgerBtn.className = 'btn-icon mobile-hamburger-btn';
+        hamburgerBtn.setAttribute('title', 'Open Menu');
+        hamburgerBtn.setAttribute('aria-label', 'Open Navigation Menu');
+        hamburgerBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
+        leftNav.appendChild(hamburgerBtn);
+
+        const navbarTitle = navbar.querySelector('.navbar-title');
+        if (navbarTitle && !leftNav.querySelector('.mobile-brand')) {
+            const brandElem = document.createElement('div');
+            brandElem.className = 'mobile-brand';
+            brandElem.innerHTML = `
+                <div class="sidebar-logo" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fa-solid fa-code"></i></div>
+                <span style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary);">CodeReview.AI</span>
+            `;
+            leftNav.appendChild(brandElem);
+        }
+    }
+
+    let drawer = document.getElementById('mobile-nav-drawer');
+    let backdrop = document.getElementById('mobile-nav-backdrop');
+
+    if (!drawer) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'mobile-nav-backdrop';
+        backdrop.className = 'mobile-nav-backdrop';
+        document.body.appendChild(backdrop);
+
+        drawer = document.createElement('aside');
+        drawer.id = 'mobile-nav-drawer';
+        drawer.className = 'mobile-nav-drawer';
+        document.body.appendChild(drawer);
+
+        backdrop.addEventListener('click', closeMobileDrawer);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeMobileDrawer();
+        });
+    }
+
+    updateMobileDrawerContent(drawer);
+
+    if (hamburgerBtn) {
+        hamburgerBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleMobileDrawer();
+        };
+    }
+}
+
+function updateMobileDrawerContent(drawer) {
+    if (!drawer) return;
+    const path = window.location.pathname.toLowerCase();
+    const isAuthenticated = !!currentUser;
+    const displayName = currentUser ? (currentUser.fullName || currentUser.username || 'Developer') : '';
+    const initials = currentUser ? getUserInitials(displayName) : '';
+    const badgeHtml = currentUser ? getRoleBadgeHtml(currentUser) : '';
+
+    drawer.innerHTML = `
+        <div class="mobile-drawer-header">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div class="sidebar-logo" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fa-solid fa-code"></i></div>
+                <span style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">CodeReview.AI</span>
+            </div>
+            <button class="btn-icon" id="mobile-drawer-close-btn" title="Close Menu" onclick="closeMobileDrawer()">&times;</button>
+        </div>
+
+        ${isAuthenticated ? `
+            <div class="mobile-drawer-user">
+                <div class="user-avatar">${initials}</div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">${displayName}</span>
+                    ${badgeHtml}
+                </div>
+            </div>
+        ` : ''}
+
+        <ul class="mobile-drawer-menu">
+            <li class="mobile-drawer-item ${path.endsWith('/index.html') || path === '/' ? 'active' : ''}">
+                <a href="/index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a>
+            </li>
+            <li class="mobile-drawer-item ${path.endsWith('/dashboard.html') ? 'active' : ''}">
+                <a href="/dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a>
+            </li>
+            <li class="mobile-drawer-item ${path.endsWith('/review.html') ? 'active' : ''}">
+                <a href="/review.html"><i class="fa-solid fa-file-code"></i> <span>Review Code</span></a>
+            </li>
+            <li class="mobile-drawer-item ${path.endsWith('/history.html') ? 'active' : ''}">
+                <a href="/history.html"><i class="fa-solid fa-clock-rotate-left"></i> <span>Review History</span></a>
+            </li>
+            <li class="mobile-drawer-item ${path.endsWith('/memory.html') ? 'active' : ''}">
+                <a href="/memory.html"><i class="fa-solid fa-brain"></i> <span>Hindsight Memory</span></a>
+            </li>
+            <li class="mobile-drawer-item ${path.endsWith('/settings.html') ? 'active' : ''}">
+                <a href="/settings.html"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
+            </li>
+        </ul>
+
+        <div class="mobile-drawer-footer">
+            ${isAuthenticated ? `
+                <button class="btn btn-secondary" onclick="logout()" style="width: 100%; justify-content: center; padding: 0.6rem;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            ` : `
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="/login.html" class="btn btn-secondary" style="flex: 1; justify-content: center;">Login</a>
+                    <a href="/register.html" class="btn btn-primary" style="flex: 1; justify-content: center;">Register</a>
+                </div>
+            `}
+        </div>
+    `;
+
+    const links = drawer.querySelectorAll('a');
+    links.forEach(link => {
+        link.addEventListener('click', closeMobileDrawer);
+    });
+}
+
+function toggleMobileDrawer() {
+    const drawer = document.getElementById('mobile-nav-drawer');
+    if (drawer && drawer.classList.contains('active')) {
+        closeMobileDrawer();
+    } else {
+        openMobileDrawer();
+    }
+}
+
+function openMobileDrawer() {
+    const drawer = document.getElementById('mobile-nav-drawer');
+    const backdrop = document.getElementById('mobile-nav-backdrop');
+    if (drawer && backdrop) {
+        drawer.classList.add('active');
+        backdrop.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeMobileDrawer() {
+    const drawer = document.getElementById('mobile-nav-drawer');
+    const backdrop = document.getElementById('mobile-nav-backdrop');
+    if (drawer && backdrop) {
+        drawer.classList.remove('active');
+        backdrop.classList.remove('active');
+        document.body.style.overflow = '';
+    }
 }
 
 // Notification Bell Controller
