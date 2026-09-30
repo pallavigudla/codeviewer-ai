@@ -613,6 +613,14 @@ body {
     margin-top: auto;
 }
 
+/* Dashboard Layout Grid */
+.dashboard-layout-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
 @media (max-width: 768px) {
     .sidebar,
     .desktop-nav-links,
@@ -631,7 +639,12 @@ body {
     }
 
     .grid-5 {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
+    }
+
+    .dashboard-layout-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem;
     }
 
     .mobile-hamburger-btn {
