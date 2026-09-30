@@ -371,9 +371,11 @@
 
         if (item.code) {
             cardHtml += `
-                <div style="margin-bottom: 0.35rem; font-size: 0.85rem;">
-                    <strong style="color: var(--text-primary);">Code:</strong>
-                    <pre style="background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); color: #F87171; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.2rem; font-family: monospace; overflow-x: auto; margin-bottom: 0;"><code>${escapeHtml(item.code)}</code></pre>
+                <div style="margin-bottom: 0.4rem; font-size: 0.85rem;">
+                    <strong style="color: ${borderAccent}; display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.25rem;">
+                        <i class="fa-solid fa-code"></i> Problematic Code:
+                    </strong>
+                    <pre class="code-block code-block-problem"><code>${escapeHtml(item.code)}</code></pre>
                 </div>
             `;
         }
@@ -399,8 +401,10 @@
         if (item.correctedCode) {
             cardHtml += `
                 <div style="margin-bottom: 0.2rem; font-size: 0.85rem;">
-                    <strong style="color: var(--success);"><i class="fa-solid fa-code"></i> Corrected Code:</strong>
-                    <pre style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34D399; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.2rem; font-family: monospace; overflow-x: auto; margin-bottom: 0; white-space: pre-wrap;"><code>${escapeHtml(item.correctedCode)}</code></pre>
+                    <strong style="color: var(--success); display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.25rem;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Corrected Code:
+                    </strong>
+                    <pre class="code-block code-block-corrected"><code>${escapeHtml(item.correctedCode)}</code></pre>
                 </div>
             `;
         }
