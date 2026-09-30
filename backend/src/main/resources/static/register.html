@@ -50,9 +50,13 @@
             <div class="modal-header" style="justify-content: center;">
                 <div class="modal-title" style="font-size: 1.2rem;"><i class="fa-solid fa-shield-halved" style="color: var(--accent-primary);"></i> Verify Email OTP</div>
             </div>
-            <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0.75rem 0 1.25rem;">
-                Enter the 6-digit OTP code sent to <br><strong id="otp-recipient-email" style="color: var(--text-primary);"></strong> <br>(Expires in 5 minutes).
+            <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0.75rem 0 0.75rem; line-height: 1.4;">
+                Enter the 6-digit OTP code sent to <br><strong id="otp-recipient-email" style="color: var(--text-primary);"></strong>.
+                <br><span style="font-size: 0.8rem; color: var(--warning);"><i class="fa-regular fa-clock"></i> OTP expires in 5 minutes.</span>
             </p>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); background: rgba(99, 102, 241, 0.08); border-left: 3px solid var(--accent-primary); padding: 0.5rem 0.75rem; border-radius: 4px; text-align: left; margin-bottom: 1rem; line-height: 1.35;">
+                <i class="fa-solid fa-circle-info" style="color: var(--accent-primary);"></i> If you don't see the email in your inbox, please check your <strong>Spam</strong> or <strong>Junk</strong> folder.
+            </div>
 
             <div id="otp-alert" style="display: none; padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; margin-bottom: 1rem;"></div>
 

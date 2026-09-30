@@ -318,8 +318,11 @@ function updateMobileDrawerContent(drawer) {
         </ul>
 
         <div class="mobile-drawer-footer">
+            <button class="btn btn-secondary" onclick="toggleTheme()" style="width: 100%; justify-content: center; padding: 0.65rem; margin-bottom: 0.6rem; font-size: 0.9rem;">
+                <i class="fa-solid fa-circle-half-stroke"></i> Switch Theme Mode
+            </button>
             ${isAuthenticated ? `
-                <button class="btn btn-secondary" onclick="logout()" style="width: 100%; justify-content: center; padding: 0.6rem;">
+                <button class="btn btn-secondary" onclick="logout()" style="width: 100%; justify-content: center; padding: 0.65rem; font-size: 0.9rem;">
                     <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
             ` : `

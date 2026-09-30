@@ -620,6 +620,8 @@ body {
     .desktop-logo,
     .desktop-title,
     .navbar-title,
+    #navbar-user-profile,
+    #theme-toggle-btn,
     #user-display-name {
         display: none !important;
     }
@@ -642,6 +644,7 @@ body {
 
     .navbar {
         padding: 0 0.85rem;
+        height: 58px;
     }
 
     .navbar-actions {
@@ -650,6 +653,13 @@ body {
 
     .container {
         padding: 1rem 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .notification-dropdown {
+        width: 285px;
+        right: -10px;
     }
 }
 
